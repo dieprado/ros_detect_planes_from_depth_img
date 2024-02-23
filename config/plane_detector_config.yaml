@@ -18,6 +18,7 @@
 topic_colored_mask: "detect_plane/colored_mask" # Colored mask, which annotates each plane.
 topic_image_viz: "detect_plane/image_viz" # Visualization image, drawn witn arrows of plane normals.
 topic_result: "detect_plane/results" # msg/PlaneResults.msg
+topic_pose: "detect_plane/pose"  # Pose of the first plane
 
 # ====================================================================== #
 # ============= Configurations for `plane_detector.py` ================= #

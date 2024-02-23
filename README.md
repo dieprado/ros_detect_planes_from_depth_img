@@ -1,6 +1,17 @@
 Detect Planes from Depth Image
 =======================================
 
+**Demo of usage with RealSense:**  
+```
+source ~/catkin_ws/devel/source
+ROOT=$(rospack find ros_detect_planes_from_depth_img)
+rosrun ros_detect_planes_from_depth_img run_server.py \
+    --config_file $ROOT/config/plane_detector_config.yaml \
+    --depth_topic /camera/aligned_depth_to_color/image_raw \
+    --color_topic /camera/color/image_raw \
+    --camera_info $ROOT/data/cam_params_realsense.json
+```
+
 **Demo of usage:**  
 ```
 ROOT=$(rospack find ros_detect_planes_from_depth_img)

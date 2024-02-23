@@ -141,16 +141,16 @@ class PlaneDetector(object):
             pcd {open3d.geometry.PointCloud}
         '''
 
-        rgbd_image = open3d.create_rgbd_image_from_color_and_depth(
-            color=open3d.Image(
+        rgbd_image = open3d.geometry.RGBDImage.create_from_color_and_depth(
+            color=open3d.geometry.Image(
                 cv2.cvtColor(color_img_resized, cv2.COLOR_BGR2RGB)),
-            depth=open3d.Image(depth_img_resized),
+            depth=open3d.geometry.Image(depth_img_resized),
             depth_scale=1.0/self._cfg.depth_unit,
             depth_trunc=self._cfg.depth_trunc,
             convert_rgb_to_intensity=False)
 
         cam_intrin = self._cam_intrin_resized.to_open3d_format()
-        pcd = open3d.create_point_cloud_from_rgbd_image(
+        pcd = open3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd_image,
             cam_intrin)
 

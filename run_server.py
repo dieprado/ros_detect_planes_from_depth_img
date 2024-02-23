@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from ros_detect_planes_from_depth_img.msg import PlanesResults
@@ -13,6 +13,9 @@ import argparse
 import yaml
 import os
 import sys
+
+from geometry_msgs.msg import Pose, PoseStamped
+from pyquaternion import Quaternion
 
 
 def parse_command_line_argumetns():
@@ -77,6 +80,56 @@ class PlaneResultsPublisher(object):
         self._pub.publish(res)
         return
 
+class PlanePosePublisher(object):
+    def __init__(self, topic_name, queue_size=10):
+        self._pub = rospy.Publisher(
+            topic_name, Pose, queue_size=queue_size)
+
+    def publish(self, plane_params):
+        '''
+        Publishes pose (center and normal) of the first plane
+        Arguments:
+            plane_params {list of PlaneParam}
+        '''
+        res = PlanesResults()
+        res.N = len(plane_params)
+        pos = Pose()
+        for pp in plane_params[0:1]:
+            res.norms.extend(pp.w.tolist())
+            res.center_3d.extend(pp.pts_3d_center.tolist())
+            #v1 = np.array([0, 0, 1])
+            v2_unnorm = np.array(res.norms[1:4])
+            v2 = v2_unnorm / np.sqrt(np.sum(v2_unnorm**2))
+            vx = np.arccos(v2[0])
+            vy = np.arccos(v2[1])
+            vz = np.arccos(v2[2])
+            quat_x = Quaternion(axis=(1.0, 0.0, 0.0), radians=vx)
+            quat_y = Quaternion(axis=(0.0, 1.0, 0.0), radians=vy)
+            quat_z = Quaternion(axis=(0.0, 0.0, 1.0), radians=vz)
+            orientation = quat_x * quat_y * quat_z
+            #print(v2)
+            #n = np.cross(v1, v2)
+            #n_norm = np.sqrt(np.sum(n**2))
+            #theta = np.arctan(n_norm / np.dot(v1, v2))
+
+            #pos.position.x = res.center_3d[0]
+            #pos.position.y = res.center_3d[1]
+            #pos.position.z = res.center_3d[2]
+            pos.position.x = res.norms[1]
+            pos.position.y = res.norms[2]
+            pos.position.z = res.norms[3]
+            #pos.orientation.x = n[0]/n_norm * np.sin(theta)
+            #pos.orientation.y = n[1]/n_norm * np.sin(theta)
+            #pos.orientation.z = n[2]/n_norm * np.sin(theta)
+            #pos.orientation.w = np.cos(theta)
+            pos.orientation.x = orientation.imaginary[0]
+            pos.orientation.y = orientation.imaginary[1]
+            pos.orientation.z = orientation.imaginary[2]
+            pos.orientation.w = orientation.real
+  
+        self._pub.publish(pos)
+        return
+
 
 def main(args):
 
@@ -95,6 +148,7 @@ def main(args):
     pub_colored_mask = ColorImagePublisher(config["topic_colored_mask"])
     pub_image_viz = ColorImagePublisher(config["topic_image_viz"])
     pub_results = PlaneResultsPublisher(config["topic_result"])
+    pub_pose = PlanePosePublisher(config["topic_pose"])
 
     # -- Wait for subscribing image and detect.
     while not rospy.is_shutdown():
@@ -124,6 +178,7 @@ def main(args):
             pub_colored_mask.publish(colored_mask)
             pub_image_viz.publish(img_viz)
             pub_results.publish(list_plane_params)
+            pub_pose.publish(list_plane_params)
             rospy.loginfo("Publish results completes.")
             rospy.loginfo("-------------------------------------------------")
             rospy.loginfo("")
